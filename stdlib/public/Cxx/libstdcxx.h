@@ -1,8 +1,10 @@
 #include <algorithm>
 #include <bitset>
+#include <bits/stl_iterator_base_types.h>
 #include <complex>
 #include <deque>
 #include <exception>
+#include <ext/type_traits.h>
 #include <fstream>
 #include <functional>
 #include <iomanip>

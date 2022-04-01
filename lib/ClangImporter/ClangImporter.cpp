@@ -704,8 +704,10 @@ importer::getNormalInvocationArguments(
   }
 
   if (searchPathOpts.getSDKPath().empty()) {
-    invocationArgStrs.push_back("-Xclang");
-    invocationArgStrs.push_back("-nostdsysteminc");
+    if (!triple.isOSLinux()) {
+      invocationArgStrs.push_back("-Xclang");
+      invocationArgStrs.push_back("-nostdsysteminc");
+    }
   } else {
     if (triple.isWindowsMSVCEnvironment()) {
       llvm::SmallString<261> path; // MAX_PATH + 1

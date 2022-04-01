@@ -604,6 +604,9 @@ namespace {
         IRGenFunction &IGF, SILType T,
         const clang::CXXConstructorDecl *copyConstructor, llvm::Value *src,
         llvm::Value *dest) const {
+      llvm::errs() << "emitCopyWithCopyConstructor:\n";
+      copyConstructor->dump(llvm::errs());
+      llvm::errs() << "===========================\n";
       auto fnType = createCXXCopyConstructorFunctionType(IGF, T);
       auto globalDecl =
           clang::GlobalDecl(copyConstructor, clang::Ctor_Complete);

@@ -120,6 +120,9 @@ void IRGenModule::emitClangDecl(const clang::Decl *decl) {
   if (getDeclWithExecutableCode(const_cast<clang::Decl *>(decl)) == nullptr) {
     ClangCodeGen->HandleTopLevelDecl(
                           clang::DeclGroupRef(const_cast<clang::Decl*>(decl)));
+    llvm::errs() << "SKIPPING code\n";
+    decl->dump(llvm::errs());
+    llvm::errs() << "===============";
     return;
   }
 
@@ -159,12 +162,26 @@ void IRGenModule::emitClangDecl(const clang::Decl *decl) {
       if (fn->getTemplateInstantiationPattern())
         Context.getClangModuleLoader()
             ->getClangSema()
-            .InstantiateFunctionDefinition(fn->getLocation(), fn);
+            .InstantiateFunctionDefinition(fn->getLocation(), fn, true);
     }
 
     if (clang::Decl *executableDecl = getDeclWithExecutableCode(next)) {
+        llvm::errs() << "TraverseDecl for:\n";
+        executableDecl->dump(llvm::errs());
+        llvm::errs() << "================\n";
+        if (auto nd = dyn_cast<clang::NamedDecl>(executableDecl)) {
+          if (nd->getIdentifier() && nd->getName() == "_M_destroy") {
+            llvm::errs() << "!!! emit _M_destroy while called with\n";
+            decl->dump(llvm::errs());
+            llvm::errs() << "!!! =================================\n";
+          }
+        }
         refFinder.TraverseDecl(executableDecl);
         next = executableDecl;
+    } else {
+      llvm::errs() << "!!! Skipping \n";
+      next->dump(llvm::errs());
+      llvm::errs() << "===============\n";
     }
 
     // Unfortunately, implicitly defined CXXDestructorDecls don't have a real

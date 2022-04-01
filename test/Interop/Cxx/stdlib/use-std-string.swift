@@ -1,4 +1,4 @@
-// RUN: %target-run-simple-swift(-I %S/Inputs -Xfrontend -enable-cxx-interop)
+// RUN: %target-run-simple-swift(-I %S/Inputs -Xfrontend -enable-cxx-interop -v -Xcc -v)
 //
 // REQUIRES: executable_test
 //

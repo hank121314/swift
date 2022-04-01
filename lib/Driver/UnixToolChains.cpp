@@ -324,6 +324,8 @@ toolchains::GenericUnix::constructInvocation(const DynamicLinkJobAction &job,
     Arguments.push_back(
         context.Args.MakeArgString(Twine("-stdlib=") + A->getValue()));
   }
+  if (getTriple().isOSLinux())
+    Arguments.push_back("-lstdc++");
 
   // Explicitly pass the target to the linker
   Arguments.push_back(
