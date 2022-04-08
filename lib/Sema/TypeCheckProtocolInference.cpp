@@ -228,6 +228,29 @@ AssociatedTypeInference::inferTypeWitnessesViaValueWitnesses(
           return false;
       }
     }
+    if (!bounds.anyObject) {
+      // FIXME: The extension may not have a generic signature set up yet as
+      // resolving signatures may trigger associated type inference.  This cycle
+      // is now detectable and we should look into untangling it
+      // - see rdar://55263708
+      if (!extension->hasComputedGenericSignature())
+        return true;
+
+      auto selfType = extension->getSelfInterfaceType();
+      for (const auto &req : extension->getGenericRequirements()) {
+        bool isSelfLHS = selfType->isEqual(req.getFirstType());
+        switch (req.getKind()) {
+        case RequirementKind::Conformance:
+          if (isSelfLHS && !checkConformance(req.getProtocolDecl()))
+            return false;
+          break;
+        case RequirementKind::Superclass:
+        case RequirementKind::SameType:
+        case RequirementKind::Layout:
+          break;
+        }
+      }
+    }
 
     return true;
   };
