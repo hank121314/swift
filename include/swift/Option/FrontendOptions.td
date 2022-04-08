@@ -248,6 +248,10 @@ let Flags = [FrontendOption, NoDriverOption, HelpHidden, ModuleInterfaceOptionIg
   def enable_lexical_lifetimes_noArg :
     Flag<["-"], "enable-lexical-lifetimes">,
     HelpText<"Enable lexical lifetimes">;
+  def enable_destroy_hoisting :
+    Joined<["-"], "enable-destroy-hoisting=">,
+    HelpText<"Whether to enable destroy hoisting">,
+    MetaVarName<"true|false">;
 }
 
 // Flags that are saved into module interfaces
@@ -536,9 +540,9 @@ def enable_explicit_existential_types :
   Flag<["-"], "enable-explicit-existential-types">,
   HelpText<"Enable experimental support for explicit existential types">;
 
-def enable_parameterized_protocol_types :
-  Flag<["-"], "enable-parameterized-protocol-types">,
-  HelpText<"Enable experimental support for primary associated types and parameterized protocols">;
+def enable_parameterized_existential_types :
+  Flag<["-"], "enable-parameterized-existential-types">,
+  HelpText<"Enable experimental support for parameterized existential types">;
 
 def enable_experimental_opened_existential_types :
   Flag<["-"], "enable-experimental-opened-existential-types">,

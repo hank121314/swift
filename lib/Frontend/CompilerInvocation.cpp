@@ -448,8 +448,8 @@ static bool ParseLangArgs(LangOptions &Opts, ArgList &Args,
   Opts.EnableExperimentalNamedOpaqueTypes |=
       Args.hasArg(OPT_enable_experimental_named_opaque_types);
 
-  Opts.EnableParameterizedProtocolTypes |=
-      Args.hasArg(OPT_enable_parameterized_protocol_types);
+  Opts.EnableParameterizedExistentialTypes |=
+      Args.hasArg(OPT_enable_parameterized_existential_types);
 
   Opts.EnableOpenedExistentialTypes =
     Args.hasFlag(OPT_enable_experimental_opened_existential_types,
@@ -795,10 +795,13 @@ static bool ParseLangArgs(LangOptions &Opts, ArgList &Args,
   // First, set up default minimum inlining target versions.
   auto getDefaultMinimumInliningTargetVersion =
       [&](const llvm::Triple &triple) -> llvm::VersionTuple {
+    // FIXME: Re-enable with rdar://91387029
+#if SWIFT_DEFAULT_API_TARGET_MIN_INLINING_VERSION_TO_MIN
     // In API modules, default to the version when Swift first became available.
     if (Opts.LibraryLevel == LibraryLevel::API)
       if (auto minTriple = minimumAvailableOSVersionForTriple(triple))
         return *minTriple;
+#endif
 
     // In other modules, assume that availability is used less consistently
     // and that library clients will generally raise deployment targets as the
@@ -1553,6 +1556,15 @@ static bool ParseSILArgs(SILOptions &Opts, ArgList &Args,
   // -Ounchecked might also set removal of runtime asserts (cond_fail).
   Opts.RemoveRuntimeAsserts |= Args.hasArg(OPT_RemoveRuntimeAsserts);
 
+  Optional<DestroyHoistingOption> specifiedDestroyHoistingOption;
+  if (Arg *A = Args.getLastArg(OPT_enable_destroy_hoisting)) {
+    specifiedDestroyHoistingOption = 
+        llvm::StringSwitch<Optional<DestroyHoistingOption>>(A->getValue())
+          .Case("true", DestroyHoistingOption::On)
+          .Case("false", DestroyHoistingOption::Off)
+          .Default(None);
+  }
+
   Optional<CopyPropagationOption> specifiedCopyPropagationOption;
   if (Arg *A = Args.getLastArg(OPT_copy_propagation_state_EQ)) {
     specifiedCopyPropagationOption =
@@ -1654,13 +1666,17 @@ static bool ParseSILArgs(SILOptions &Opts, ArgList &Args,
 
   // Unless overridden below, enabling copy propagation means enabling lexical
   // lifetimes.
-  if (Opts.CopyPropagation == CopyPropagationOption::On)
+  if (Opts.CopyPropagation == CopyPropagationOption::On) {
     Opts.LexicalLifetimes = LexicalLifetimesOption::On;
+    Opts.DestroyHoisting = DestroyHoistingOption::On;
+  }
 
   // Unless overridden below, disable copy propagation means disabling lexical
   // lifetimes.
-  if (Opts.CopyPropagation == CopyPropagationOption::Off)
+  if (Opts.CopyPropagation == CopyPropagationOption::Off) {
     Opts.LexicalLifetimes = LexicalLifetimesOption::DiagnosticMarkersOnly;
+    Opts.DestroyHoisting = DestroyHoistingOption::Off;
+  }
 
   // If move-only is enabled, always enable lexical lifetime as well.  Move-only
   // depends on lexical lifetimes.
@@ -1681,6 +1697,8 @@ static bool ParseSILArgs(SILOptions &Opts, ArgList &Args,
       Opts.LexicalLifetimes = LexicalLifetimesOption::Off;
     }
   }
+  if (specifiedDestroyHoistingOption)
+    Opts.DestroyHoisting = *specifiedDestroyHoistingOption;
 
   Opts.EnableARCOptimizations &= !Args.hasArg(OPT_disable_arc_opts);
   Opts.EnableOSSAModules |= Args.hasArg(OPT_enable_ossa_modules);
